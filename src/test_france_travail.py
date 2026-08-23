@@ -131,8 +131,8 @@ def main():
     # Indiquer ici les paramètres de la recherche d'offres d'emploi : 
     # mots-clés, lieu...
     querystring = {
-        "motsCles": "boulanger",
-        "departement": "48"
+        "motsCles": "data",
+        "departement": "34"
     }
 
     token = get_access_token()
