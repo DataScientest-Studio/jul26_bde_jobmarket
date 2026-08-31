@@ -88,8 +88,8 @@ def main():
         "app_id": APP_ID,
         "app_key": APP_KEY,
         "what": "boulanger",
-        "where": "Lozère",
-        "results_per_page": 100
+        "where": "Hérault",
+        "results_per_page": 10
     }
 
     response = get_offers(querystring)
