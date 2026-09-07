@@ -181,6 +181,12 @@ def normalize_offer(offer):
     salaire = offer.get("salaire") or {}
     origine_offre = offer.get("origineOffre") or {}
 
+    location_label = (offer.get("lieuTravail") or {}).get("libelle", "")
+    location_region, separator, location_city = location_label.partition(" - ")
+    if not separator:
+        location_region = None
+        location_city = None
+
     rome_code = offer.get("romeCode")
     category, category_label = normalize_category(rome_code)
 
@@ -194,8 +200,8 @@ def normalize_offer(offer):
         "contractType": offer.get("typeContrat"),
         "contractTime": offer.get("dureeTravailLibelleConverti"),
         "locationZipCode": lieu_travail.get("codePostal"),
-        "locationRegion": lieu_travail.get("libelle"),
-        "locationCity": lieu_travail.get("commune"),
+        "locationDepartment": location_region,
+        "locationCity": location_city,
         "locationLatitude": to_float(lieu_travail.get("latitude")),
         "locationLongitude": to_float(lieu_travail.get("longitude")),
         "salary": parse_salary(salaire.get("libelle")),

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from mappings.departments import get_department_code
 
 RAW_DIR = Path("data/raw/adzuna")
 PROCESSED_DIR = Path("data/processed/adzuna")
@@ -131,7 +132,7 @@ def normalize_category(category_tag):
     normalized_tag = category_tag.strip().lower()
     category = ADZUNA_CATEGORY_MAPPING.get(normalized_tag, "UNKNOWN")
 
-    return category, CATEGORY_LABELS[category]
+    return CATEGORY_LABELS[category]
 
 
 def normalize_offer(offer):
@@ -143,7 +144,10 @@ def normalize_offer(offer):
     location = offer.get("location") or {}
     area = location.get("area") or []
 
-    category, category_label = normalize_category(source_category.get("tag"))
+    department_name = area[2] if len(area) > 2 else None
+    location_department = get_department_code(department_name)
+
+    category_label = normalize_category(source_category.get("tag"))
 
     return {
         "source": "Adzuna",
@@ -155,7 +159,7 @@ def normalize_offer(offer):
         "contractType": offer.get("contract_type"),
         "contractTime": offer.get("contract_time"),
         "locationZipCode": None,
-        "locationRegion": area[2] if len(area) > 2 else None,
+        "locationDepartment": location_department,
         "locationCity": area[3] if len(area) > 3 else None,
         "locationLatitude": to_float(offer.get("latitude")),
         "locationLongitude": to_float(offer.get("longitude")),
@@ -165,7 +169,7 @@ def normalize_offer(offer):
         ),
         "url": offer.get("redirect_url"),
         "codeNAF": None,
-        "category": category,
+        "category": (offer.get("category") or {}).get("tag"),        
         "categoryLabel": category_label,
         "romeCode": None,
         "romeLibelle": None,

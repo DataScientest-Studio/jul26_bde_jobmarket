@@ -131,7 +131,7 @@ def main():
     # Indiquer ici les paramètres de la recherche d'offres d'emploi : 
     # mots-clés, lieu...
     querystring = {
-        "grandDomaine": "A",
+        "motsCles": "data",
         "departement": "34"
     }
 
