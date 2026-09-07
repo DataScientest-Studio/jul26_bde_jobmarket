@@ -1,0 +1,155 @@
+{
+  "results": [
+    {
+      "label": "Accounting & Finance Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "accounting-finance-jobs"
+    },
+    {
+      "label": "IT Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "it-jobs"
+    },
+    {
+      "label": "Sales Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "sales-jobs"
+    },
+    {
+      "label": "Customer Services Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "customer-services-jobs"
+    },
+    {
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Engineering Jobs",
+      "tag": "engineering-jobs"
+    },
+    {
+      "label": "HR & Recruitment Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "hr-jobs"
+    },
+    {
+      "tag": "healthcare-nursing-jobs",
+      "label": "Healthcare & Nursing Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "hospitality-catering-jobs",
+      "label": "Hospitality & Catering Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "PR, Advertising & Marketing Jobs",
+      "tag": "pr-advertising-marketing-jobs"
+    },
+    {
+      "label": "Logistics & Warehouse Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "logistics-warehouse-jobs"
+    },
+    {
+      "tag": "teaching-jobs",
+      "label": "Teaching Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "trade-construction-jobs",
+      "label": "Trade & Construction Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "label": "Admin Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "admin-jobs"
+    },
+    {
+      "tag": "legal-jobs",
+      "label": "Legal Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "creative-design-jobs",
+      "label": "Creative & Design Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "label": "Graduate Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "graduate-jobs"
+    },
+    {
+      "tag": "retail-jobs",
+      "label": "Retail Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "consultancy-jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Consultancy Jobs"
+    },
+    {
+      "tag": "manufacturing-jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Manufacturing Jobs"
+    },
+    {
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Scientific & QA Jobs",
+      "tag": "scientific-qa-jobs"
+    },
+    {
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Social work Jobs",
+      "tag": "social-work-jobs"
+    },
+    {
+      "label": "Travel Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "travel-jobs"
+    },
+    {
+      "tag": "energy-oil-gas-jobs",
+      "label": "Energy, Oil & Gas Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "property-jobs",
+      "label": "Property Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "charity-voluntary-jobs",
+      "label": "Charity & Voluntary Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "domestic-help-cleaning-jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Domestic help & Cleaning Jobs"
+    },
+    {
+      "tag": "maintenance-jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Maintenance Jobs"
+    },
+    {
+      "label": "Part time Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "tag": "part-time-jobs"
+    },
+    {
+      "tag": "other-general-jobs",
+      "label": "Other/General Jobs",
+      "__CLASS__": "Adzuna::API::Response::Category"
+    },
+    {
+      "tag": "unknown",
+      "__CLASS__": "Adzuna::API::Response::Category",
+      "label": "Unknown"
+    }
+  ],
+  "__CLASS__": "Adzuna::API::Response::Categories"
+}

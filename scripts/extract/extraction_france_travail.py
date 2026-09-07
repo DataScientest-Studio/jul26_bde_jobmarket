@@ -80,7 +80,7 @@ def save_raw_response(response):
     """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d")
     file_path = RAW_DIR / f"france_travail_{timestamp}.json"
 
     data = response.json()
@@ -131,7 +131,7 @@ def main():
     # Indiquer ici les paramètres de la recherche d'offres d'emploi : 
     # mots-clés, lieu...
     querystring = {
-        "motsCles": "data",
+        "grandDomaine": "A",
         "departement": "34"
     }
 

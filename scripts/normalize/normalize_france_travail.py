@@ -8,6 +8,45 @@ RAW_DIR = Path("data/raw/france_travail")
 PROCESSED_DIR = Path("data/processed/france_travail")
 
 
+CATEGORY_LABELS = {
+    "A": "Agriculture / Pêche / Espaces verts et naturels / Soins aux animaux",
+    "B": "Arts / Artisanat d'art",
+    "C": "Banque / Assurance",
+    "C15": "Immobilier",
+    "D": "Commerce / Vente",
+    "E": "Communication / Multimédia",
+    "F": "Bâtiment / Travaux Publics",
+    "G": "Hôtellerie - Restauration / Tourisme / Animation",
+    "H": "Industrie",
+    "I": "Installation / Maintenance",
+    "J": "Santé",
+    "K": "Services à la personne / à la collectivité",
+    "L": "Spectacle",
+    "L14": "Sport",
+    "M": "Achats / Comptabilité / Gestion",
+    "M13": "Direction d'entreprise",
+    "M14": "Conseil / Études",
+    "M15": "Ressources Humaines",
+    "M16": "Secrétariat / Assistanat",
+    "M17": "Marketing / Stratégie commerciale",
+    "M18": "Informatique / Télécommunication",
+    "N": "Transport / Logistique",
+    "UNKNOWN": "Non classé / Domaine inconnu",
+}
+
+
+ROME_SUBCATEGORIES = {
+    "C15",
+    "L14",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
+    "M17",
+    "M18",
+}
+
+
 def load_json(file_path: Path):
     """Charge un fichier JSON."""
     with open(file_path, "r", encoding="utf-8") as file:
@@ -103,6 +142,36 @@ def parse_salary(label):
     return amounts[0]
 
 
+def normalize_category(rome_code):
+    """
+    Détermine la catégorie normalisée à partir du code ROME.
+
+    Les sous-domaines explicitement présents dans le mapping sont conservés.
+    Par exemple :
+        M1805 -> M18 / Informatique / Télécommunication
+        C1504 -> C15 / Immobilier
+
+    Pour les autres codes, la première lettre définit le grand domaine.
+    """
+    if not isinstance(rome_code, str) or not rome_code.strip():
+        return "UNKNOWN", CATEGORY_LABELS["UNKNOWN"]
+
+    normalized_rome_code = rome_code.strip().upper()
+    subcategory = normalized_rome_code[:3]
+
+    if subcategory in ROME_SUBCATEGORIES:
+        category = subcategory
+    else:
+        main_category = normalized_rome_code[0]
+        category = (
+            main_category
+            if main_category in CATEGORY_LABELS
+            else "UNKNOWN"
+        )
+
+    return category, CATEGORY_LABELS[category]
+
+
 def normalize_offer(offer):
     """
     Transforme une offre France Travail vers le schéma normalisé du projet.
@@ -112,8 +181,12 @@ def normalize_offer(offer):
     salaire = offer.get("salaire") or {}
     origine_offre = offer.get("origineOffre") or {}
 
+    rome_code = offer.get("romeCode")
+    category, category_label = normalize_category(rome_code)
+
     return {
-        "id": offer.get("id"),
+        "source": "France Travail",
+        "source_id": offer.get("id"),
         "title": offer.get("intitule"),
         "company": entreprise.get("nom"),
         "description": offer.get("description"),
@@ -128,8 +201,9 @@ def normalize_offer(offer):
         "salary": parse_salary(salaire.get("libelle")),
         "url": origine_offre.get("urlOrigine"),
         "codeNAF": offer.get("codeNAF"),
-        "categoryLabel": offer.get("secteurActiviteLibelle"),
-        "romeCode": offer.get("romeCode"),
+        "category": category,
+        "categoryLabel": category_label,
+        "romeCode": rome_code,
         "romeLibelle": offer.get("romeLibelle"),
         "skills": extract_labels(offer.get("competences"), key="libelle"),
         "education": extract_labels(offer.get("formations"), key="niveauLibelle"),

@@ -269,7 +269,7 @@ Le tableau suivant reprend le schéma normalisé proposé et précise, pour chaq
 
 | Champ normalisé     | Type final   | France Travail (champ / type)              | Adzuna (champ / type)                        |
 | ------------------- | ------------ | ------------------------------------------ | -------------------------------------------- |
-| `id`                | `str`        | `id` (`str`)                               | `id` (`str`)                                 |
+| `source_id`         | `str`        | `id` (`str`)                               | `id` (`str`)                                 |
 | `title`             | `str`        | `intitule` (`str`)                         | `title` (`str`)                              |
 | `company`           | `str`        | `entreprise.nom` (`str`)                   | `company.display_name` (`str`)               |
 | `description`       | `str`        | `description` (`str`)                      | `description` (`str`)                        |
@@ -306,3 +306,112 @@ Les champs ayant besoin d'être processés avant intégration dans une BDD norma
 * `location.area` --> `locationRegion` : Le département se trouve de manière **uniforme** en 3ème position dans la liste du champ. On prendre donc `locationRegion = location.area[2]`
 * `location.area` --> `locationCity` : Lorsqu'elle est indiquée, la ville se trouve de manière **uniforme** en 4ème position dans la liste du champ. On prendre donc `locationCity = location.area[3]` en prenant garde de **traiter le cas où aucune ville n'est renseignée**.
 *  `salaire_min` et `salaire_max` --> `salary` : calculer la moyenne des 2 champs.
+
+
+
+# Mapping des catégories d'offres d'emploi
+
+## Principe retenu
+
+La taxonomie commune du projet **Job Market** reprend les domaines et sous-domaines du référentiel **ROME de France Travail** présents dans le tableau de mapping.
+
+L'objectif est de conserver la précision disponible chez France Travail :
+
+- pour **France Travail**, `category` est déterminé à partir de `romeCode` ;
+- lorsqu'un sous-domaine est identifié dans le mapping (`C15`, `L14`, `M13`, `M14`, etc.), il est conservé dans `category` ;
+- sinon, `category` correspond au grand domaine, représenté par la première lettre du `romeCode` ;
+- pour **Adzuna**, `category.tag` est traduit vers la catégorie ROME la plus proche ;
+- `categoryLabel` contient le libellé lisible associé à `category` ;
+- les catégories absentes, trop générales ou inconnues sont classées dans `UNKNOWN`.
+
+Ainsi, un `romeCode` France Travail égal à `M1805` conserve la précision du sous-domaine :
+
+```json
+{
+  "romeCode": "M1805",
+  "category": "M18",
+  "categoryLabel": "Informatique / Télécommunication"
+}
+```
+
+À l'inverse, lorsqu'aucun sous-domaine spécifique du mapping n'est défini, seule la lettre du grand domaine est utilisée. Par exemple, un code `F1106` est classé en `F`.
+
+## Taxonomie normalisée et mapping Adzuna
+
+Concernant les catégories fournies par l'API Adzuna, la liste des **29 catégories** (30 catégories si l'on considère "unknown") a été récupérée via l'API Adzuna `/jobs/{country}/categories` qui "list available categories".
+
+| `category` | `categoryLabel` | `category.tag` Adzuna associés |
+|---|---|---|
+| `A` | Agriculture / Pêche / Espaces verts et naturels / Soins aux animaux | — |
+| `B` | Arts / Artisanat d'art | `creative-design-jobs` |
+| `C` | Banque / Assurance | — |
+| `C15` | Immobilier | `property-jobs` |
+| `D` | Commerce / Vente | `sales-jobs`, `retail-jobs` |
+| `E` | Communication / Multimédia | — |
+| `F` | Bâtiment / Travaux Publics | `trade-construction-jobs` |
+| `G` | Hôtellerie - Restauration / Tourisme / Animation | `travel-jobs`, `hospitality-catering-jobs` |
+| `H` | Industrie | `manufacturing-jobs`, `energy-oil-gas-jobs` |
+| `I` | Installation / Maintenance | `maintenance-jobs` |
+| `J` | Santé | `healthcare-nursing-jobs` |
+| `K` | Services à la personne / à la collectivité | `social-work-jobs`, `charity-voluntary-jobs`, `domestic-help-cleaning-jobs`, `teaching-jobs` |
+| `L` | Spectacle | — |
+| `L14` | Sport | — |
+| `M` | Achats / Comptabilité / Gestion | `accounting-finance-jobs`, `admin-jobs` |
+| `M13` | Direction d'entreprise | — |
+| `M14` | Conseil / Études | `consultancy-jobs`, `engineering-jobs`, `scientific-qa-jobs`, `customer-services-jobs`, `legal-jobs` |
+| `M15` | Ressources Humaines | `hr-jobs` |
+| `M16` | Secrétariat / Assistanat | — |
+| `M17` | Marketing / Stratégie commerciale | `pr-advertising-marketing-jobs` |
+| `M18` | Informatique / Télécommunication | `it-jobs` |
+| `N` | Transport / Logistique | `logistics-warehouse-jobs` |
+| `UNKNOWN` | Non classé / Domaine inconnu | `other-general-jobs`, `graduate-jobs`, `part-time-jobs`, catégorie absente ou tag inconnu |
+
+## Règle de détermination pour France Travail
+
+Le `romeCode` complet est toujours conservé dans les données normalisées.
+
+La catégorie est déterminée selon l'ordre suivant :
+
+1. on examine les trois premiers caractères du `romeCode` ;
+2. s'ils correspondent à un sous-domaine explicitement conservé dans le mapping (`C15`, `L14`, `M13`, `M14`, `M15`, `M16`, `M17`, `M18`), ce sous-domaine devient `category` ;
+3. sinon, la première lettre du `romeCode` devient `category` ;
+4. si le `romeCode` est absent ou invalide, `category` vaut `UNKNOWN`.
+
+Exemples :
+
+| `romeCode` | `category` | `categoryLabel` |
+|---|---|---|
+| `C1504` | `C15` | Immobilier |
+| `F1106` | `F` | Bâtiment / Travaux Publics |
+| `M1403` | `M14` | Conseil / Études |
+| `M1805` | `M18` | Informatique / Télécommunication |
+| valeur absente | `UNKNOWN` | Non classé / Domaine inconnu |
+
+## Règle de détermination pour Adzuna
+
+Adzuna ne fournit pas de `romeCode`. La valeur de `category.tag` est donc directement traduite à l'aide du tableau de correspondance ci-dessus.
+
+Exemple pour une offre dont `category.tag` vaut `it-jobs` :
+
+```json
+{
+  "romeCode": null,
+  "category": "M18",
+  "categoryLabel": "Informatique / Télécommunication"
+}
+```
+
+Pour une catégorie Adzuna trop générale ou non reconnue :
+
+```json
+{
+  "romeCode": null,
+  "category": "UNKNOWN",
+  "categoryLabel": "Non classé / Domaine inconnu"
+}
+```
+
+## Remarques sur le mapping
+
+Les catégories Adzuna ne reposent pas sur le référentiel ROME : leur rattachement reste donc une approximation métier.
+

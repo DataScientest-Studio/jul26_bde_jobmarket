@@ -87,9 +87,9 @@ def main():
     querystring = {
         "app_id": APP_ID,
         "app_key": APP_KEY,
-        "what": "boulanger",
+        "what": "ingénieur aménagement",
         "where": "Hérault",
-        "results_per_page": 10
+        "results_per_page": 20
     }
 
     response = get_offers(querystring)
