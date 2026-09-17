@@ -7,7 +7,8 @@ from pymongo import MongoClient
 from pymongo.errors import BulkWriteError
 
 
-PROCESSED_DIR = Path("data/processed")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 
 load_dotenv()
 
@@ -22,7 +23,7 @@ def get_collection():
     )
 
     db = client[os.getenv("MONGO_DB")]
-
+    
     return db["offers"]
 
 
@@ -53,15 +54,28 @@ def process_file(file_path, collection):
         )
 
     except BulkWriteError as error:
-        inserted = error.details["nInserted"]
+        write_errors = error.details.get("writeErrors", [])
 
-        print(
-            f"{file_path} : "
-            f"{inserted} offre(s) insérée(s), "
-            f"{len(offers) - inserted} offre(s) ignorée(s)."
-        )
+        duplicate_errors = [
+            err for err in write_errors
+            if err.get("code") == 11000
+        ]
 
+        other_errors = [
+            err for err in write_errors
+            if err.get("code") != 11000
+        ]
 
+        inserted = error.details.get("nInserted", 0)
+
+        print(f"{inserted} offres insérées")
+        print(f"{len(duplicate_errors)} doublons ignorés")
+
+        if other_errors:
+            print("Erreurs MongoDB inattendues :", other_errors)
+            raise
+            
+    
 def main():
     collection = get_collection()
 

@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-import time
+
 import requests
 from dotenv import load_dotenv
 
@@ -20,10 +20,6 @@ SEARCH_URL = (
 )
 
 RAW_DIR = Path("data/raw/france_travail")
-
-RANGE_SIZE = 150
-DELAY = 0.25
-MAX_RANGE_END = 12000
 
 # ----- Récupération des identifiants France Travail sous forme de variables d'environnement
 
@@ -78,16 +74,14 @@ def get_offers(token, querystring):
 
 # ----- Enregistrement des données brutes
 
-def save_raw_response(response, timestamp, start, end):
+def save_raw_response(response):
     """
-    Enregistre une tranche de résultats de l'API France Travail.
+    Enregistre la réponse de l'API France Travail au format JSON.
     """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    file_path = (
-        RAW_DIR
-        / f"france_travail_{timestamp}_range_{start:04d}_{end:04d}.json"
-    )
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_path = RAW_DIR / f"france_travail_{timestamp}.json"
 
     data = response.json()
 
@@ -133,7 +127,9 @@ def get_json_keys(data, prefix=""):
 # ----- Programme principal 
 
 def main():
-
+    
+    # Indiquer ici les paramètres de la recherche d'offres d'emploi : 
+    # mots-clés, lieu...
     querystring = {
         "grandDomaine": "N",
         "departement": "34"
@@ -141,77 +137,19 @@ def main():
 
     token = get_access_token()
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    response = get_offers(token, querystring)
 
-    all_keys = set()
-    total_downloaded = 0
+    # Optionnel : exploration des données pour obtention de la liste des clés (ici, par ordre alphabétique)
+    data = response.json()
+    
+    all_keys = get_json_keys(data["resultats"])
+    
+    for key in sorted(all_keys):
+        print(key)
 
-    for start in range(0, MAX_RANGE_END + 1, RANGE_SIZE):
+    file_path = save_raw_response(response)
+    print(f"Données enregistrées dans : {file_path}")
 
-        end = min(
-            start + RANGE_SIZE - 1,
-            MAX_RANGE_END
-        )
-
-        querystring["range"] = f"{start}-{end}"
-
-        response = get_offers(
-            token,
-            querystring
-        )
-
-        data = response.json()
-        offers = data.get("resultats", [])
-
-        total_downloaded += len(offers)
-
-        all_keys.update(
-            get_json_keys(offers)
-        )
-
-        file_path = save_raw_response(
-            response,
-            timestamp,
-            start,
-            end
-        )
-
-        print(
-            f"Range {start}-{end} : "
-            f"{len(offers)} offres récupérées "
-            f"(HTTP {response.status_code})"
-        )
-
-        print(
-            f"Content-Range : "
-            f"{response.headers.get('Content-Range')}"
-        )
-
-        print(
-            f"Total récupéré : {total_downloaded}"
-        )
-
-        # HTTP 200 : tous les résultats ont été parcourus.
-        # HTTP 206 : il reste des résultats.
-        content_range = response.headers.get("Content-Range")
-
-        if content_range:
-            total_results = int(content_range.split("/")[-1])
-
-            if total_downloaded >= total_results:
-                break
-
-        time.sleep(DELAY)
-
-    print(
-        f"\nExtraction terminée : "
-        f"{total_downloaded} offres récupérées."
-    )
-
-    # Optionnel : affichage de toutes les clés rencontrées
-    #for key in sorted(all_keys):
-    #    print(key)
-        
 
 if __name__ == "__main__":
     main()

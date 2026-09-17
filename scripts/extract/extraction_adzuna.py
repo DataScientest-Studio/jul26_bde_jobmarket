@@ -1,5 +1,7 @@
 import json
+import math
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -9,12 +11,18 @@ from dotenv import load_dotenv
 
 # ----- Configuration
 
-SEARCH_URL = "https://api.adzuna.com/v1/api/jobs/fr/search/1"
+SEARCH_URL = "https://api.adzuna.com/v1/api/jobs/fr/search"
 
 RAW_DIR = Path("data/raw/adzuna")
 
+RESULTS_PER_PAGE = 50
+DELAY = 3
 
-# ----- Récupération des identifiants Adzuna sous forme de variables d'environnement
+START_PAGE = 1
+
+
+# ----- Récupération des identifiants Adzuna
+# sous forme de variables d'environnement
 
 load_dotenv()
 
@@ -22,14 +30,17 @@ APP_ID = os.getenv("ADZUNA_APP_ID")
 APP_KEY = os.getenv("ADZUNA_APP_KEY")
 
 
-# ----- Première récupération d'offres d'emploi
+# ----- Récupération d'une page d'offres d'emploi
 
-def get_offers(querystring):
+def get_offers(querystring, page):
     """
-    Récupère les offres d'emploi depuis l'API Adzuna.
+    Récupère une page d'offres d'emploi depuis l'API Adzuna.
     """
+
+    url = f"{SEARCH_URL}/{page}"
+
     response = requests.get(
-        SEARCH_URL,
+        url,
         params=querystring
     )
 
@@ -40,14 +51,14 @@ def get_offers(querystring):
 
 # ----- Enregistrement des données brutes
 
-def save_raw_response(response):
+def save_raw_response(response, timestamp, page):
     """
-    Enregistre la réponse de l'API Adzuna au format JSON.
+    Enregistre une page de la réponse de l'API Adzuna au format JSON.
     """
+
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_path = RAW_DIR / f"adzuna_{timestamp}.json"
+    file_path = RAW_DIR / f"adzuna_{timestamp}_page_{page:03d}.json"
 
     data = response.json()
 
@@ -63,6 +74,7 @@ def get_json_keys(data, prefix=""):
     """
     Récupère de manière récursive les chemins des clés d'un objet JSON.
     """
+
     keys = set()
 
     if isinstance(data, dict):
@@ -82,29 +94,145 @@ def get_json_keys(data, prefix=""):
 
 def main():
 
-    # Indiquer ici les paramètres de la recherche d'offres d'emploi :
-    # IDENTIFIANTS (ici, pas de requête OAuth pour récupérer un token. Adzuna demande app_id et app_key à chaque appel), mots-clés, lieu...
     querystring = {
         "app_id": APP_ID,
         "app_key": APP_KEY,
-        "what": "data",
         "where": "Hérault",
-        "results_per_page": 50
+        "results_per_page": RESULTS_PER_PAGE
     }
 
-    response = get_offers(querystring)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Optionnel : exploration des données pour obtention
-    # de la liste des clés par ordre alphabétique
+    # ----- Première page de la reprise
+
+    response = get_offers(querystring, START_PAGE)
     data = response.json()
 
-    all_keys = get_json_keys(data["results"])
+    total_results = data["count"]
 
-    for key in sorted(all_keys):
-        print(key)
+    total_pages = math.ceil(
+        total_results / RESULTS_PER_PAGE
+    )
 
-    file_path = save_raw_response(response)
-    print(f"Données enregistrées dans : {file_path}")
+    all_keys = set()
+    total_downloaded = 0
+
+    # Traitement de la page 154
+    offers = data.get("results", [])
+
+    save_raw_response(response, timestamp, START_PAGE)
+
+    all_keys.update(
+        get_json_keys(offers)
+    )
+
+    total_downloaded += len(offers)
+
+    print(
+        f"Page {START_PAGE}/{total_pages} - "
+        f"{total_downloaded} nouvelles offres récupérées"
+    )
+
+    # ----- Pages suivantes
+
+    for page in range(START_PAGE + 1, total_pages + 1):
+
+        time.sleep(DELAY)
+
+        response = get_offers(querystring, page)
+        data = response.json()
+
+        offers = data.get("results", [])
+
+        if not offers:
+            print(f"Aucune offre à la page {page}. Arrêt.")
+            break
+
+        save_raw_response(response, timestamp, page)
+
+        all_keys.update(
+            get_json_keys(offers)
+        )
+
+        total_downloaded += len(offers)
+
+        print(
+            f"Page {page}/{total_pages} - "
+            f"{total_downloaded} nouvelles offres récupérées"
+        )
+
+    querystring = {
+        "app_id": APP_ID,
+        "app_key": APP_KEY,
+        "where": "Hérault",
+        "results_per_page": RESULTS_PER_PAGE
+    }
+
+    # Même timestamp pour identifier toutes les pages appartenant à une même extraction
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # ----- Première page
+
+    response = get_offers(querystring, page=1)
+    data = response.json()
+
+    total_results = data["count"]
+
+    total_pages = math.ceil(
+        total_results / RESULTS_PER_PAGE
+    )
+
+    print(f"{total_results} offres disponibles.")
+    print(f"{total_pages} pages à récupérer.")
+
+    save_raw_response(response, timestamp, page=1)
+
+    #all_keys = get_json_keys(data["results"])
+
+    total_downloaded = len(data["results"])
+
+    print(
+        f"Page 1/{total_pages} - "
+        f"{total_downloaded} offres récupérées"
+    )
+
+    # ----- Pages suivantes
+
+    for page in range(START_PAGE+1, total_pages + 1):
+
+        time.sleep(DELAY)
+
+        response = get_offers(querystring, page)
+        data = response.json()
+
+        offers = data.get("results", [])
+
+        if not offers:
+            print(f"Aucune offre à la page {page}. Arrêt.")
+            break
+
+        save_raw_response(response, timestamp, page)
+
+        #all_keys.update(
+        #    get_json_keys(offers)
+        #)
+
+        total_downloaded += len(offers)
+
+        print(
+            f"Page {page}/{total_pages} - "
+            f"{total_downloaded} offres récupérées"
+        )
+
+    # ----- Affichage des clés rencontrées
+
+    #for key in sorted(all_keys):
+    #    print(key)
+
+    print(
+        f"Extraction terminée : "
+        f"{total_downloaded} offres récupérées."
+    )
 
 
 if __name__ == "__main__":
