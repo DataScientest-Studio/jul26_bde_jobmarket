@@ -7,7 +7,7 @@ from pymongo import MongoClient
 from pymongo.errors import BulkWriteError
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 
 load_dotenv()

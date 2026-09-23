@@ -132,7 +132,7 @@ def normalize_category(category_tag):
     normalized_tag = category_tag.strip().lower()
     category = ADZUNA_CATEGORY_MAPPING.get(normalized_tag, "UNKNOWN")
 
-    return CATEGORY_LABELS[category]
+    return category, CATEGORY_LABELS[category]
 
 
 def normalize_offer(offer):
@@ -147,7 +147,7 @@ def normalize_offer(offer):
     department_name = area[2] if len(area) > 2 else None
     location_department = get_department_code(department_name)
 
-    category_label = normalize_category(source_category.get("tag"))
+    category, category_label = normalize_category(source_category.get("tag"))
 
     return {
         "source": "Adzuna",
@@ -169,7 +169,7 @@ def normalize_offer(offer):
         ),
         "url": offer.get("redirect_url"),
         "codeNAF": None,
-        "category": (offer.get("category") or {}).get("tag"),        
+        "category": category,        
         "categoryLabel": category_label,
         "romeCode": None,
         "romeLibelle": None,
