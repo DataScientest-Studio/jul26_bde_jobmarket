@@ -4,6 +4,10 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# test du wordcloud
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+
 french_stopwords = stopwords.words("french")
 
 def build_tfidf_matrix(df: pd.DataFrame):
@@ -77,3 +81,20 @@ def recommend(
     )
 
     return results.head(top_n)
+
+def show_wordcloud(df):
+    text = " ".join(df["text"].dropna())
+
+    wordcloud = WordCloud(
+        width=1200,
+        height=600,
+        background_color="white",
+        stopwords=set(french_stopwords),
+        collocations=False,
+        min_word_length=3
+    ).generate(text)
+    
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+
+    plt.savefig("wordcloud.png", bbox_inches="tight")
