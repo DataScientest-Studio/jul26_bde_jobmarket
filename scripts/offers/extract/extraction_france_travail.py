@@ -1,8 +1,10 @@
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
 import time
+
 import requests
 from dotenv import load_dotenv
 
@@ -24,6 +26,19 @@ RAW_DIR = Path("data/raw/france_travail")
 RANGE_SIZE = 150
 DELAY = 0.25
 MAX_RANGE_END = 12000
+
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    filename=LOG_DIR / "jobmarket.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    encoding="utf-8"
+)
+
+logger = logging.getLogger("extraction_france_travail")
+
 
 # ----- Récupération des identifiants France Travail sous forme de variables d'environnement
 
@@ -49,6 +64,8 @@ def get_access_token():
     response = requests.post(TOKEN_URL, data=data)
     response.raise_for_status()
 
+    logger.info("Authentification France Travail réussie.")
+
     return response.json()["access_token"]
 
 
@@ -70,8 +87,6 @@ def get_offers(token, querystring):
     )
 
     response.raise_for_status()
-    #print(response.status_code)
-    #pprint(response.json())
 
     return response
 
@@ -93,6 +108,8 @@ def save_raw_response(response, timestamp, start, end):
 
     with open(file_path, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
+
+    logger.info("Range %s-%s enregistrée dans %s.", start, end, file_path)
 
     return file_path
 
@@ -130,9 +147,11 @@ def get_json_keys(data, prefix=""):
     return keys
 
 
-# ----- Programme principal 
+# ----- Programme principal
 
 def main():
+
+    logger.info("Début de l'extraction France Travail.")
 
     querystring = {
         "grandDomaine": "N",
@@ -191,6 +210,15 @@ def main():
             f"Total récupéré : {total_downloaded}"
         )
 
+        logger.info(
+            "Range %s-%s : %s offres récupérées (HTTP %s) - total : %s.",
+            start,
+            end,
+            len(offers),
+            response.status_code,
+            total_downloaded
+        )
+
         # HTTP 200 : tous les résultats ont été parcourus.
         # HTTP 206 : il reste des résultats.
         content_range = response.headers.get("Content-Range")
@@ -199,6 +227,10 @@ def main():
             total_results = int(content_range.split("/")[-1])
 
             if total_downloaded >= total_results:
+                logger.info(
+                    "Toutes les offres disponibles ont été récupérées (%s).",
+                    total_results
+                )
                 break
 
         time.sleep(DELAY)
@@ -208,10 +240,16 @@ def main():
         f"{total_downloaded} offres récupérées."
     )
 
+    logger.info(
+        "Extraction France Travail terminée : %s offres récupérées.",
+        total_downloaded
+    )
+
     # Optionnel : affichage de toutes les clés rencontrées
     #for key in sorted(all_keys):
     #    print(key)
-        
+
 
 if __name__ == "__main__":
     main()
+

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +13,18 @@ from dotenv import load_dotenv
 SEARCH_URL = "https://api.adzuna.com/v1/api/jobs/fr/search/153"
 
 RAW_DIR = Path("data/raw/adzuna")
+
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    filename=LOG_DIR / "jobmarket.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    encoding="utf-8"
+)
+
+logger = logging.getLogger("extraction_adzuna_one_request")
 
 
 # ----- Récupération des identifiants Adzuna sous forme de variables d'environnement
@@ -35,6 +48,8 @@ def get_offers(querystring):
 
     response.raise_for_status()
 
+    logger.info("Requête Adzuna réussie (HTTP %s).", response.status_code)
+
     return response
 
 
@@ -53,6 +68,8 @@ def save_raw_response(response):
 
     with open(file_path, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
+
+    logger.info("Réponse brute enregistrée dans %s.", file_path)
 
     return file_path
 
@@ -82,6 +99,8 @@ def get_json_keys(data, prefix=""):
 
 def main():
 
+    logger.info("Début de l'extraction Adzuna - requête unique.")
+
     # Indiquer ici les paramètres de la recherche d'offres d'emploi :
     # IDENTIFIANTS (ici, pas de requête OAuth pour récupérer un token. Adzuna demande app_id et app_key à chaque appel), mots-clés, lieu...
     querystring = {
@@ -97,7 +116,10 @@ def main():
     # de la liste des clés par ordre alphabétique
     data = response.json()
 
-    all_keys = get_json_keys(data["results"])
+    offers = data.get("results", [])
+    logger.info("%s offres récupérées.", len(offers))
+
+    all_keys = get_json_keys(offers)
 
     for key in sorted(all_keys):
         print(key)
@@ -105,6 +127,12 @@ def main():
     file_path = save_raw_response(response)
     print(f"Données enregistrées dans : {file_path}")
 
+    logger.info("Extraction Adzuna terminée.")
+
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        logger.exception("Arrêt du script à la suite d'une erreur.")
+        raise

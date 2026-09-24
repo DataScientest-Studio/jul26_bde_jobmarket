@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,19 @@ SEARCH_URL = (
 )
 
 RAW_DIR = Path("data/raw/france_travail")
+
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    filename=LOG_DIR / "jobmarket.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    encoding="utf-8"
+)
+
+logger = logging.getLogger("extraction_france_travail_one_request")
+
 
 # ----- Récupération des identifiants France Travail sous forme de variables d'environnement
 
@@ -45,6 +59,8 @@ def get_access_token():
     response = requests.post(TOKEN_URL, data=data)
     response.raise_for_status()
 
+    logger.info("Authentification France Travail réussie.")
+
     return response.json()["access_token"]
 
 
@@ -66,6 +82,12 @@ def get_offers(token, querystring):
     )
 
     response.raise_for_status()
+
+    logger.info(
+        "Requête France Travail réussie (HTTP %s).",
+        response.status_code
+    )
+
     #print(response.status_code)
     #pprint(response.json())
 
@@ -87,6 +109,8 @@ def save_raw_response(response):
 
     with open(file_path, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
+
+    logger.info("Réponse brute enregistrée dans %s.", file_path)
 
     return file_path
 
@@ -124,11 +148,13 @@ def get_json_keys(data, prefix=""):
     return keys
 
 
-# ----- Programme principal 
+# ----- Programme principal
 
 def main():
-    
-    # Indiquer ici les paramètres de la recherche d'offres d'emploi : 
+
+    logger.info("Début de l'extraction France Travail - requête unique.")
+
+    # Indiquer ici les paramètres de la recherche d'offres d'emploi :
     # mots-clés, lieu...
     querystring = {
         "grandDomaine": "N",
@@ -141,15 +167,24 @@ def main():
 
     # Optionnel : exploration des données pour obtention de la liste des clés (ici, par ordre alphabétique)
     data = response.json()
-    
-    all_keys = get_json_keys(data["resultats"])
-    
+
+    offers = data.get("resultats", [])
+    logger.info("%s offres récupérées.", len(offers))
+
+    all_keys = get_json_keys(offers)
+
     for key in sorted(all_keys):
         print(key)
 
     file_path = save_raw_response(response)
     print(f"Données enregistrées dans : {file_path}")
 
+    logger.info("Extraction France Travail terminée.")
+
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        logger.exception("Arrêt du script à la suite d'une erreur.")
+        raise

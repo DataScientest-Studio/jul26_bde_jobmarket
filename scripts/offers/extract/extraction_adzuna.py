@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import time
@@ -19,6 +20,18 @@ RESULTS_PER_PAGE = 50
 DELAY = 3
 
 START_PAGE = 1
+
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    filename=LOG_DIR / "jobmarket.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    encoding="utf-8"
+)
+
+logger = logging.getLogger("extraction_adzuna")
 
 
 # ----- Récupération des identifiants Adzuna
@@ -46,6 +59,12 @@ def get_offers(querystring, page):
 
     response.raise_for_status()
 
+    logger.info(
+        "Page %s récupérée depuis Adzuna (HTTP %s).",
+        page,
+        response.status_code
+    )
+
     return response
 
 
@@ -64,6 +83,8 @@ def save_raw_response(response, timestamp, page):
 
     with open(file_path, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
+
+    logger.info("Page %s enregistrée dans %s.", page, file_path)
 
     return file_path
 
@@ -94,6 +115,8 @@ def get_json_keys(data, prefix=""):
 
 def main():
 
+    logger.info("Début de l'extraction Adzuna.")
+
     querystring = {
         "app_id": APP_ID,
         "app_key": APP_KEY,
@@ -117,7 +140,7 @@ def main():
     all_keys = set()
     total_downloaded = 0
 
-    # Traitement de la page 154
+    # Traitement de la première page
     offers = data.get("results", [])
 
     save_raw_response(response, timestamp, START_PAGE)
@@ -133,6 +156,13 @@ def main():
         f"{total_downloaded} nouvelles offres récupérées"
     )
 
+    logger.info(
+        "Page %s/%s - %s nouvelles offres récupérées.",
+        START_PAGE,
+        total_pages,
+        total_downloaded
+    )
+
     # ----- Pages suivantes
 
     for page in range(START_PAGE + 1, total_pages + 1):
@@ -146,6 +176,7 @@ def main():
 
         if not offers:
             print(f"Aucune offre à la page {page}. Arrêt.")
+            logger.warning("Aucune offre à la page %s. Arrêt.", page)
             break
 
         save_raw_response(response, timestamp, page)
@@ -159,6 +190,13 @@ def main():
         print(
             f"Page {page}/{total_pages} - "
             f"{total_downloaded} nouvelles offres récupérées"
+        )
+
+        logger.info(
+            "Page %s/%s - %s nouvelles offres récupérées.",
+            page,
+            total_pages,
+            total_downloaded
         )
 
     querystring = {
@@ -185,6 +223,9 @@ def main():
     print(f"{total_results} offres disponibles.")
     print(f"{total_pages} pages à récupérer.")
 
+    logger.info("%s offres disponibles.", total_results)
+    logger.info("%s pages à récupérer.", total_pages)
+
     save_raw_response(response, timestamp, page=1)
 
     #all_keys = get_json_keys(data["results"])
@@ -194,6 +235,12 @@ def main():
     print(
         f"Page 1/{total_pages} - "
         f"{total_downloaded} offres récupérées"
+    )
+
+    logger.info(
+        "Page 1/%s - %s offres récupérées.",
+        total_pages,
+        total_downloaded
     )
 
     # ----- Pages suivantes
@@ -209,6 +256,7 @@ def main():
 
         if not offers:
             print(f"Aucune offre à la page {page}. Arrêt.")
+            logger.warning("Aucune offre à la page %s. Arrêt.", page)
             break
 
         save_raw_response(response, timestamp, page)
@@ -224,6 +272,13 @@ def main():
             f"{total_downloaded} offres récupérées"
         )
 
+        logger.info(
+            "Page %s/%s - %s offres récupérées.",
+            page,
+            total_pages,
+            total_downloaded
+        )
+
     # ----- Affichage des clés rencontrées
 
     #for key in sorted(all_keys):
@@ -234,6 +289,15 @@ def main():
         f"{total_downloaded} offres récupérées."
     )
 
+    logger.info(
+        "Extraction Adzuna terminée : %s offres récupérées.",
+        total_downloaded
+    )
+
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        logger.exception("Arrêt du script à la suite d'une erreur.")
+        raise
