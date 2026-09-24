@@ -31,8 +31,8 @@ def main():
 
     preferences = {
         "keywords": (
-            "data analyst python sql "
-            "machine learning analyse de données"
+            "data engineer python sql "
+            "docker pipelines de données"
         ),
         "locationDepartment": "34",
         "categoryLabel": "Informatique / Télécommunication",

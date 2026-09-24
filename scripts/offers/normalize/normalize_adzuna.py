@@ -150,10 +150,10 @@ def normalize_offer(offer):
     category, category_label = normalize_category(source_category.get("tag"))
 
     return {
-        "source": "Adzuna",
+        "source": "adzuna",
         "source_id": offer.get("id"),
         "title": offer.get("title"),
-        "company": company.get("display_name"),
+        "company": company.get("display_name").lower() if company.get("display_name") else None,
         "description": offer.get("description"),
         "creationDate": offer.get("created"),
         "contractType": offer.get("contract_type"),

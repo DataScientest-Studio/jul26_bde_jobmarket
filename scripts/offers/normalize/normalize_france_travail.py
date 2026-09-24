@@ -191,10 +191,10 @@ def normalize_offer(offer):
     category, category_label = normalize_category(rome_code)
 
     return {
-        "source": "France Travail",
+        "source": "france travail",
         "source_id": offer.get("id"),
         "title": offer.get("intitule"),
-        "company": entreprise.get("nom"),
+        "company": entreprise.get("nom").lower() if entreprise.get("nom") else None,
         "description": offer.get("description"),
         "creationDate": offer.get("dateCreation"),
         "contractType": offer.get("typeContrat"),

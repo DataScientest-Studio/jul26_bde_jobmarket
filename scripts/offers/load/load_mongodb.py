@@ -14,16 +14,10 @@ load_dotenv()
 
 
 def get_collection():
-    client = MongoClient(
-        host=os.getenv("MONGO_HOST"),
-        port=int(os.getenv("MONGO_PORT")),
-        username=os.getenv("MONGO_USER"),
-        password=os.getenv("MONGO_PASSWORD"),
-        authSource=os.getenv("MONGO_DB"),
-    )
+    client = MongoClient(os.getenv("MONGO_ATLAS_URI"))
 
     db = client[os.getenv("MONGO_DB")]
-    
+
     return db["offers"]
 
 

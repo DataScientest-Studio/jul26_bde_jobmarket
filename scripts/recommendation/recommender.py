@@ -1,8 +1,10 @@
 import pandas as pd
 
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+french_stopwords = stopwords.words("french")
 
 def build_tfidf_matrix(df: pd.DataFrame):
     """
@@ -12,6 +14,7 @@ def build_tfidf_matrix(df: pd.DataFrame):
     vectorizer = TfidfVectorizer(
         lowercase=True,
         strip_accents="unicode",
+        stop_words=french_stopwords,
         max_features=5000,
     )
 
