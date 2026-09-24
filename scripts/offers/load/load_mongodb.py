@@ -10,11 +10,11 @@ from pymongo.errors import BulkWriteError
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 
-load_dotenv()
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 def get_collection():
-    client = MongoClient(os.getenv("MONGO_ATLAS_URI"))
+    client = MongoClient(os.getenv("MONGODB_ATLAS_URI"))
 
     db = client[os.getenv("MONGO_DB")]
 

@@ -64,6 +64,19 @@ def main():
         )
     )
 
+    text = " ".join(df["text"].dropna())
+
+    wordcloud = WordCloud(
+        width=1200,
+        height=600,
+        background_color="white",
+        stopwords=set(french_stopwords),
+        collocations=False,
+    ).generate(text)
+
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.show()
 
 if __name__ == "__main__":
     main()
